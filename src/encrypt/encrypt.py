@@ -111,7 +111,7 @@ def encrypt():
 
     beta_literals_sets = sorted(beta_literals_sets)
     
-    beta_sets_file = open(f"data/cipher_{args.count}_dir/map_{args.count}.txt", "w")
+    beta_sets_file = open(f"data/cipher_{args.count}_dir/beta_literals_sets_{args.count}.txt", "w")
     beta_sets_file.write(str(f"{beta_literals_sets}\n"))
     beta_sets_file.close()
 

@@ -6,7 +6,7 @@ import ast
 from itertools import chain as flatten, combinations as subset, product as cartesian
 from collections import defaultdict
 
-from src.encrypt.encrypt import cnf_to_neg_anf
+from src.encrypt.encrypt import cnf_to_neg_anf, distribute
 
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,10 +27,10 @@ class Coefficient:
         return f"Coefficient(v={self.value})"
 
 
-def recover_beta_literals(cipher_x_hdf5_file):
-    if "expression" in cipher_x_hdf5_file:
+def recover_beta_literals(cipher_n__hdf5_file):
+    if "expression" in cipher_n__hdf5_file:
 
-        ciphertext = cipher_x_hdf5_file["expression"]
+        ciphertext = cipher_n__hdf5_file["expression"]
         ciphertext = np.array(ciphertext[:])
         ciphertext = map(tuple, ciphertext)
 
@@ -70,28 +70,29 @@ def recover_beta_literals(cipher_x_hdf5_file):
 
 
 def recover_plaintext(
-    beta_literals_sets, clauses_x_txt_file, cipher_x_hdf5_file, map_x_txt_file
+    cipher_n__hdf5_file, clauses_n__txt_file, beta_literals_sets_n__txt_file
 ):
+    
+    beta_literals_sets = recover_beta_literals(cipher_n__hdf5_file)
 
-    clauses = clauses_x_txt_file.read()
-    for x in beta_literals_sets:
-        print([int(l) for l in x])
+    clauses = clauses_n__txt_file.read()
 
-    print("----------")
+    # print("the beta literals sets found by recover_beta_literals():")
+    # for x in beta_literals_sets:
+    #     print([int(l) for l in x])
 
-    real_beta_literals_sets = ast.literal_eval(map_x_txt_file.read())
-    for x in real_beta_literals_sets:
-        print(x)
+    # print("the real beta literals sets:")
+    # real_beta_literals_sets = ast.literal_eval(beta_literals_sets_n__txt_file.read())
+    # for x in real_beta_literals_sets:
+    #     print(x)
 
-    def distribute(iterable):  # from itertools powerset recipe
-        return flatten.from_iterable(
-            subset(iterable, r) for r in range(1, len(iterable) + 1)
-        )
+    a_terms = defaultdict(list)
+
+    coefficient_count = 0
 
     for beta_literals_set in beta_literals_sets:
 
         all_clauses = ast.literal_eval(clauses)
-
         possible_clauses = np.fromiter(
             filter(
                 lambda c: all(map(lambda l: l in beta_literals_set, list(zip(*c))[0])),
@@ -99,31 +100,29 @@ def recover_plaintext(
             ),
             dtype=list,
         )
-        print("possible clauses", possible_clauses)
+
         if len(possible_clauses) < ALPHA:
             raise ValueError(f"<{ALPHA} clauses found")
         
         R_terms = np.fromiter(distribute(beta_literals_set), dtype=object)
 
         n = len(R_terms)
-        a = np.zeros((n,n), dtype=np.int64)
-        b = np.zeros(n, dtype=np.int64)
-        print("a", a)
+        coefficient_count += n
+        
 
         v__cnf_to_neg_anf = np.vectorize(cnf_to_neg_anf)
         C = v__cnf_to_neg_anf(possible_clauses)
-        # C = [cnf_to_neg_anf(C_i) for C_i in possible_clauses]
-        # print("hi", [list(x) for x in C])
+
         for C_i in C:
+
             #####
             C_i = np.fromiter(C_i, dtype=object)
-            print(list(C_i))
+    
             #####
             R_i_terms = R_terms
-            R_i_coefficients = map(lambda i: Coefficient(i), range(len(R_i_terms)))
+            R_i_coefficients = map(lambda i: Coefficient(i), range(coefficient_count - n, coefficient_count))
             R_i = np.fromiter(zip(R_i_coefficients, R_i_terms), dtype=object)
 
-            print("C_i", C_i)
             #####
             unformatted_C_iR_i = cartesian(R_i, C_i)
             C_iR_i = []
@@ -134,73 +133,86 @@ def recover_plaintext(
                 coefficient = term[0][0]
                 literals = tuple(sorted([int(x) for x in set(term[0][1] + term[1])]))
                 full_term = (coefficient, literals)
-                C_iR_i.append(full_term)
 
-            distributed_C_iR_i = defaultdict(list)
+                C_iR_i.append(full_term)
 
             for term in C_iR_i:
                 coefficient = term[0]
                 literals = term[1]
-                distributed_C_iR_i[literals].append(coefficient)
+
+                a_terms[literals].append(coefficient)
+    
+
+    def clause_vector(coefficients, cols):
+        v = np.zeros(cols)
+        for c in coefficients:
+            v[c.value] = 1
+            # NOTE: if we are using XOR we would do v[c.value] = int(not v[c.value])
+            # whereas if we are using OR we would do v[c.value] = 1
+        return v
+    
+    ciphertext = list(
+        map(
+            lambda t: tuple(sorted([np.int64(l) for l in t])),
+            np.array(cipher_n__hdf5_file["expression"][:]),
+        )
+    )
+    print("coefficient_count", coefficient_count) # unique r_is
+    print("len(a_terms.keys())", len(a_terms.keys())) # unique monomials
+    print("ciphertext", ciphertext)
 
 
-            print(distributed_C_iR_i)
+    a_scalars__variable_bits = np.fromiter(a_terms.values(), dtype=object)
+    a_vectors__monomials = np.fromiter(a_terms.keys(), dtype=object)
 
-            ciphertext = list(
-                map(
-                    lambda t: tuple(sorted([np.int64(l) for l in t])),
-                    np.array(cipher_x_hdf5_file["expression"][:]),
-                )
-            )
+    rows = len(a_vectors__monomials)
+    cols = coefficient_count
+   
+    a = np.zeros((rows,cols), dtype=np.int64)
+    b = np.zeros(rows, dtype=np.int64)
 
-            def clause_vector(coefficients, dimension):
-                v = np.zeros(dimension)
-                for c in coefficients:
-                    v[c.value] = 1
-                    # NOTE: if we are using XOR we would do v[c.value] = int(not v[c.value])
-                    # whereas if we are using OR we would do v[c.value] = 1
-                return v
 
-            # m = len(distributed_C_iR_i.values())
-            lhs = np.zeros((n, n), dtype=int)
+    for i, m in enumerate(a_scalars__variable_bits):
+        a[i] = clause_vector(m, cols)
 
-            for i, row in enumerate(
-                map(lambda x: clause_vector(x, n), distributed_C_iR_i.values())
-            ):
-                lhs[i] = row
+    for i, m in enumerate(a_vectors__monomials):
+        b[i] = int(m in ciphertext)
 
-            for x in distributed_C_iR_i.keys():
-                print(x, x in ciphertext)
+    # np.set_printoptions(threshold=sys.maxsize)
+    print(a)
+    print(b)
 
-            rhs = map(lambda x: x in ciphertext, distributed_C_iR_i.keys())
-            rhs = np.fromiter(rhs, dtype=int)
-            np.set_printoptions(threshold=sys.maxsize)
-            print("lhs", lhs)
-            print("rhs", rhs)
 
-        # try:
-        #     sol = np.linalg.solve(lhs, rhs)
-        #     print(sol)
-        # except Exception as e:
-        #     print(f"No solution: {e}")
-        #     print(0)
+
+    # for i in range(len(a_monomials)):
+    #     print(a_monomials[i])
+    #     a[i] = clause_vector(a_monomials[i], coefficient_count)
+
+
+
+
+    # try:
+    #     sol = np.linalg.solve(lhs, rhs)
+    #     print(sol)
+    # except Exception as e:
+    #     print(f"No solution: {e}")
+    #     print(0)
+    
 
 
 def codebreak(n):
-    hdf5_filename = f"{os.environ.get("DATA_DIRECTORY")}/cipher_{n}_dir/cipher_{n}.hdf5"
-    clause_filename = (
-        f"{os.environ.get("DATA_DIRECTORY")}/cipher_{n}_dir/clauses_{n}.txt"
-    )
+    cipher_n_dir = f"{os.environ.get("DATA_DIRECTORY")}/cipher_{n}_dir"
+    cipher_n__hdf5 = f"{cipher_n_dir}/cipher_{n}.hdf5"
+    clauses_n__txt = f"{cipher_n_dir}/clauses_{n}.txt"
+    beta_literals_sets_n__txt = f"{cipher_n_dir}/beta_literals_sets_{n}.txt"
 
-    with h5py.File(hdf5_filename, "r") as cipher_x_hdf5_file:
-        beta_literals_sets = recover_beta_literals(cipher_x_hdf5_file)
-        with open(clause_filename, "r") as clauses_x_txt_file:
-            with open(f"data/cipher_{n}_dir/map_{n}.txt", "r") as map_x_txt_file:
+    with h5py.File(cipher_n__hdf5, "r") as cipher_n__hdf5_file:
+        with open(clauses_n__txt, "r") as clauses_n__txt_file:
+            with open(beta_literals_sets_n__txt, "r") as beta_literals_sets_n__txt_file:
                 y = recover_plaintext(
-                    beta_literals_sets,
-                    clauses_x_txt_file,
-                    cipher_x_hdf5_file,
-                    map_x_txt_file,
+                    cipher_n__hdf5_file,
+                    clauses_n__txt_file,
+                    beta_literals_sets_n__txt_file,
                 )
 
 

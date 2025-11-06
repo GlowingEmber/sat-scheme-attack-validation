@@ -49,6 +49,7 @@ def cnf_to_neg_anf(term):
     term = filter(lambda t: 0 not in t, term)  # a*0 = 0
     term = map(lambda t: tuple(filter(lambda t: t != 1, t)), term)  # a*1 = a
     term = map(lambda t: tuple(set(t)), term)  # a*a = a
+    term = filter(lambda t: len(t) > 0, term)
     return term
 
 
@@ -58,6 +59,7 @@ def encrypt():
     CLAUSES = key.generate_clause_list()
 
     clauses_file = open(f"data/cipher_{args.count}_dir/clauses_{args.count}.txt", "w")
+    print(str(CLAUSES))
     clauses_file.write(str(CLAUSES))
     clauses_file.close()
 

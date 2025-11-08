@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 import argparse
 
+
 def g(n):
 
     with open(f"data/cipher_{n}_dir/priv_{n}.txt", "r") as file:
@@ -9,7 +10,7 @@ def g(n):
         priv = file.read()
 
         with h5py.File(f"data/cipher_{n}_dir/cipher_{n}.hdf5", "r") as file:
-            
+
             if "expression" in file:
 
                 def assign(x):
@@ -20,7 +21,9 @@ def g(n):
 
                 v__assign = np.vectorize(assign)
 
-                v__assign_conditional = lambda term: v__assign(term) if len(term) > 0 else []
+                v__assign_conditional = lambda term: (
+                    v__assign(term) if len(term) > 0 else []
+                )
 
                 expression = file["expression"]
                 expression = np.array(expression[:])
@@ -39,15 +42,13 @@ def g(n):
 def decrypt(n):
     g_decryption = g(n)
     with open(f"data/cipher_{n}_dir/plain_{n}.txt", "r") as file:
-        
+
         y = int(file.read())
-        res = {
-            0: "SUCCESS",
-            1: "FAILURE"
-        }
-        print(f"{res[y ^ g_decryption]}: y={y}, g(priv)={g_decryption}")
 
-
+        print(f"decryption for cipher {n} with plaintext y={y}:")
+        print(f"g(priv)={g_decryption}      =>      y=1")
+        if y ^ g_decryption:
+            print("FAILURE")
 
 
 if __name__ == "__main__":

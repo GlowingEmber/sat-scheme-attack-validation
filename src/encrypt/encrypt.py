@@ -32,11 +32,6 @@ def product_simplify(clause, random):
     x_array, y_array = np.meshgrid(clause, random)
 
     product = np.fromiter(zip(x_array.ravel(), y_array.ravel()), dtype=tuple)
-
-    # def unique(t):
-    #     return tuple(set(flatten(*t)))
-    # product = unique(product)
-
     product = [set(flatten(*t)) for t in product]
 
     return product
@@ -128,8 +123,8 @@ def encrypt():
     y_term = args.plaintext
     # y_term=0, constant_term=0     =>      do nothing
     # y_term=0, constant_term=1     =>      do nothing
-    # y_term=1, constant_term=0     =>      add constant term ()
-    # y_term=1, constant_term=1     =>      remove constant term ()
+    # y_term=1, constant_term=0     =>      add constant term 1 aka ()
+    # y_term=1, constant_term=1     =>      remove constant term 1 aka ()
 
     if y_term == 1 and constant_term == 0:
         cipher.append(tuple())

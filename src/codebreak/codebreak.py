@@ -84,16 +84,16 @@ def recover_plaintext(
 
     clauses = clauses_n__txt_file.read()
     all_clauses = ast.literal_eval(clauses)
-    print("all clauses", all_clauses)
+    # print("all clauses", all_clauses)
 
-    print("the beta literals sets found by recover_beta_literals():")
-    for x in beta_literals_sets:
-        print([int(l) for l in x])
+    # print("the beta literals sets found by recover_beta_literals():")
+    # for x in beta_literals_sets:
+    #     print([int(l) for l in x])
 
-    print("the real beta literals sets:")
-    real_beta_literals_sets = ast.literal_eval(beta_literals_sets_n__txt_file.read())
-    for x in real_beta_literals_sets:
-        print(x)
+    # print("the real beta literals sets:")
+    # real_beta_literals_sets = ast.literal_eval(beta_literals_sets_n__txt_file.read())
+    # for x in real_beta_literals_sets:
+    #     print(x)
 
     a_terms = defaultdict(list)
 
@@ -134,9 +134,7 @@ def recover_plaintext(
                 range(coefficient_count - n, coefficient_count),
             ), dtype=object)
             R_i = np.fromiter(zip(R_i_coefficients, R_i_terms), dtype=object)
-            # print(R_i_terms)
-            # print(R_i_coefficients)
-            # print(R_i)
+
 
             #####
             unformatted_C_iR_i = np.fromiter(cartesian(R_i, C_i), dtype=object)
@@ -155,7 +153,6 @@ def recover_plaintext(
                 coefficient = term[0]
                 literals = term[1]
                 a_terms[literals] = a_terms[literals] + [coefficient]
-            # print(a_terms)
 
     def clause_vector(coefficients, cols):
         v = np.zeros(cols)
@@ -176,12 +173,7 @@ def recover_plaintext(
 
     rows = len(a_terms.keys())
     cols = coefficient_count
-    print(rows)
-    print(cols)
 
-    # # system = defaultdict(tuple)
-    # for x in a_terms:
-    #      #print(x, a_terms[x])
 
     a = np.zeros((rows, cols), dtype=np.int64)
     b = np.zeros(rows, dtype=np.int64)
@@ -190,30 +182,27 @@ def recover_plaintext(
         a[i] = clause_vector(a_terms[term], cols)
         b[i] = int(term in simplified_cipher)
         if sum(a[i]) == 0 and b[i] == 1:
-            # print(term, a[i], b[i])
             raise ValueError
-        # system[term] = {
-        #     "a_i": clause_vector(a_terms[term], cols),
-        #     "b_i": int(term in simplified_cipher)
-        # }
+
 
 
     GF = galois.GF(2)
     a = GF(a)
     b = GF(b)
 
-    print(f"\na:\n{a}\nb:\n{b}")
-
     rank_a = np.linalg.matrix_rank(a)
     augmented_matrix = np.hstack((a, b.reshape(-1, 1)))
     rank_augmented = np.linalg.matrix_rank(augmented_matrix)
-
     y = int(rank_a != rank_augmented)
-    lhs = f"rank([A])={rank_a}, rank([A|b])={rank_augmented}"
-    rhs = f"y = {y}"
+
+    print(f"codebreaking for cipher {args.n}:")
+    print(f"A:\n{a}\nb:\n{b}")
+    lhs = f"rank([A])={rank_a} \u2227 rank([A|b])={rank_augmented}"
+    rhs = f"y={y}"
     print(
         f"{lhs}       =>      {rhs}"
     )
+
     return y
 
 
@@ -246,4 +235,4 @@ if __name__ == "__main__":
     parser.add_argument("n", type=int)
     args = parser.parse_args()
 
-    print(codebreak(args.n))
+    y = codebreak(args.n)

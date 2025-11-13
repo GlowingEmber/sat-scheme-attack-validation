@@ -103,31 +103,33 @@ def encrypt():
     if not LEAVE_CLAUSES_UNSORTED:
         cipher = sorted(
             cipher,
-            key=lambda term: [p(term) for p in CIPHER_SORTING_ORDER],
+            key=lambda term: [p(term) for p in CIPHERTEXT_SORTING_ORDER],
             reverse=True,
         )
 
+    ### private_key_n__txt
+    if INCLUDE_PRIVATE_KEY_N__TXT:
+        f = open(f"data/cipher_{args.n}_dir/private_key_{args.n}.txt", "w")
+        f.write(str(f"{key.PRIVATE_KEY_STRING}\n"))
+        f.close()
+
     ### beta_literals_sets_n__txt
     if INCLUDE_BETA_LITERALS_SETS_N__TXT:
-        beta_literals_sets_n__txt_file = open(
-            f"data/cipher_{args.n}_dir/beta_literals_sets_{args.n}.txt", "w"
-        )
-        beta_literals_sets_n__txt_file.write(str(f"{beta_literals_sets}\n"))
-        beta_literals_sets_n__txt_file.close()
+        f = open(f"data/cipher_{args.n}_dir/beta_literals_sets_{args.n}.txt", "w")
+        f.write(str(f"{beta_literals_sets}\n"))
+        f.close()
 
     ### clauses_n__txt
     if INCLUDE_CLAUSES_N__TXT:
-        clauses_n__txt_file = open(
-            f"data/cipher_{args.n}_dir/clauses_{args.n}.txt", "w"
-        )
-        clauses_n__txt_file.write(str(CLAUSES))
-        clauses_n__txt_file.close()
+        f = open(f"data/cipher_{args.n}_dir/clauses_{args.n}.txt", "w")
+        f.write(str(CLAUSES))
+        f.close()
 
     ### clauses_n__hdf5
     vlen_dtype = h5py.vlen_dtype(np.dtype("float64"))
-    cipher_n__hdf5_file = f"data/cipher_{args.n}_dir/cipher_{args.n}.hdf5"
-    with h5py.File(cipher_n__hdf5_file, "w") as file:
-        dset = file.create_dataset(
+    ciphertext_n__hdf5_file = f"data/cipher_{args.n}_dir/ciphertext_{args.n}.hdf5"
+    with h5py.File(ciphertext_n__hdf5_file, "w") as f:
+        dset = f.create_dataset(
             name="expression", shape=(len(cipher),), dtype=vlen_dtype
         )
         dset[:] = cipher

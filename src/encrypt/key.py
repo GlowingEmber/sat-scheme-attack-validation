@@ -15,7 +15,6 @@ PRIVATE_KEY_STRING = f"{bin(PRIVATE_KEY)[2:]:0>{N}}"  # B^n
 valid_clause = (
     lambda literal_index, parity: int(PRIVATE_KEY_STRING[literal_index]) == parity
 )
-# print("PRIV", PRIVATE_KEY_STRING)
 
 def _generate_valid_clause():  # all variables ORed
     clause_literals = [l+2 for l in secure.sample(range(N), K)]

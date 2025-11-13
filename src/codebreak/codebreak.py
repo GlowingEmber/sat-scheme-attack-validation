@@ -34,10 +34,10 @@ class Coefficient:
         return self.value == other.value
 
 
-def recover_beta_literals(cipher_n__hdf5_file):
-    if "expression" in cipher_n__hdf5_file:
+def recover_beta_literals(ciphertext_n__hdf5_file):
+    if "expression" in ciphertext_n__hdf5_file:
 
-        ciphertext = cipher_n__hdf5_file["expression"]
+        ciphertext = ciphertext_n__hdf5_file["expression"]
         ciphertext = np.array(ciphertext[:])
         ciphertext = map(tuple, ciphertext)
 
@@ -77,10 +77,10 @@ def recover_beta_literals(cipher_n__hdf5_file):
 
 
 def recover_plaintext(
-    cipher_n__hdf5_file, clauses_n__txt_file, beta_literals_sets_n__txt_file
+    ciphertext_n__hdf5_file, clauses_n__txt_file, beta_literals_sets_n__txt_file
 ):
 
-    beta_literals_sets = recover_beta_literals(cipher_n__hdf5_file)
+    beta_literals_sets = recover_beta_literals(ciphertext_n__hdf5_file)
 
     clauses = clauses_n__txt_file.read()
     all_clauses = ast.literal_eval(clauses)
@@ -109,21 +109,22 @@ def recover_plaintext(
 
             #####
 
-            C_minus_C_i = list(possible_clauses[:i]) + list(possible_clauses[i+1:])
+            C_minus_C_i = list(possible_clauses[:i]) + list(possible_clauses[i + 1 :])
             R_i_literals_set = list(set([l[0] for l in flatten(*C_minus_C_i)]))
-
 
             R_terms = np.fromiter(distribute(R_i_literals_set), dtype=object)
             n = len(R_terms)
             coefficient_count += n
 
             R_i_terms = R_terms
-            R_i_coefficients = np.fromiter(map(
-                lambda i: Coefficient(i),
-                range(coefficient_count - n, coefficient_count),
-            ), dtype=object)
+            R_i_coefficients = np.fromiter(
+                map(
+                    lambda i: Coefficient(i),
+                    range(coefficient_count - n, coefficient_count),
+                ),
+                dtype=object,
+            )
             R_i = np.fromiter(zip(R_i_coefficients, R_i_terms), dtype=object)
-
 
             #####
             unformatted_C_iR_i = np.fromiter(cartesian(R_i, C_i), dtype=object)
@@ -149,7 +150,7 @@ def recover_plaintext(
             v[c.value] = 1
         return v
 
-    cipher = cipher_n__hdf5_file["expression"][:]
+    cipher = ciphertext_n__hdf5_file["expression"][:]
     cipher = map(lambda x: tuple([int(l) for l in x]), cipher)
     rearranged_cipher = Counter(list(cipher))
     simplified_cipher = set(
@@ -163,7 +164,6 @@ def recover_plaintext(
     rows = len(a_terms.keys())
     cols = coefficient_count
 
-
     a = np.zeros((rows, cols), dtype=np.int64)
     b = np.zeros(rows, dtype=np.int64)
 
@@ -172,8 +172,6 @@ def recover_plaintext(
         b[i] = int(term in simplified_cipher)
         if sum(a[i]) == 0 and b[i] == 1:
             raise ValueError
-
-
 
     GF = galois.GF(2)
     a = GF(a)
@@ -188,24 +186,22 @@ def recover_plaintext(
     print(f"A:\n{a}\nb:\n{b}")
     lhs = f"rank([A])={rank_a} \u2227 rank([A|b])={rank_augmented}"
     rhs = f"y={y}"
-    print(
-        f"{lhs}       =>      {rhs}"
-    )
+    print(f"{lhs}       =>      {rhs}")
 
     return y
 
 
 def codebreak(n):
     cipher_n_dir = f"{os.environ.get("DATA_DIRECTORY")}/cipher_{n}_dir"
-    cipher_n__hdf5 = f"{cipher_n_dir}/cipher_{n}.hdf5"
+    ciphertext_n__hdf5 = f"{cipher_n_dir}/ciphertext_{n}.hdf5"
     clauses_n__txt = f"{cipher_n_dir}/clauses_{n}.txt"
     beta_literals_sets_n__txt = f"{cipher_n_dir}/beta_literals_sets_{n}.txt"
 
-    with h5py.File(cipher_n__hdf5, "r") as cipher_n__hdf5_file:
+    with h5py.File(ciphertext_n__hdf5, "r") as ciphertext_n__hdf5_file:
         with open(clauses_n__txt, "r") as clauses_n__txt_file:
             with open(beta_literals_sets_n__txt, "r") as beta_literals_sets_n__txt_file:
                 y = recover_plaintext(
-                    cipher_n__hdf5_file,
+                    ciphertext_n__hdf5_file,
                     clauses_n__txt_file,
                     beta_literals_sets_n__txt_file,
                 )

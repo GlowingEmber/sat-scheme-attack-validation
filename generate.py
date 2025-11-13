@@ -57,16 +57,16 @@ def generate(n):
         ciphers.append(str(next_n))
         t += float(res.stderr[:-2])
 
-        ##### WRITE TO FILES
-
-        path = f"{next_dir}/priv_{next_n}.txt"
+        ### plaintext_n__txt
+        path = f"{next_dir}/plaintext_{next_n}.txt"
         with open(path, "w") as file:
             file.write(str(plaintext))
 
-        if INCLUDE_CIPHER_N__TXT:
-            path = f"{next_dir}/cipher_{next_n}.txt"
+        ### ciphertext_n__txt
+        if INCLUDE_CIPHERTEXT_N__TXT:
+            path = f"{next_dir}/ciphertext_{next_n}.txt"
             with open(path, "w") as file:
-                cmd = f"h5dump --width=1 '{next_dir}/cipher_{next_n}.hdf5'"
+                cmd = f"h5dump --width=1 '{next_dir}/ciphertext_{next_n}.hdf5'"
                 cipher = run_zsh(cmd, capture=True)
                 file.write(cipher.stdout)
 

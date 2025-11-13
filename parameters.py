@@ -5,11 +5,11 @@ import math
 PLAINTEXT = 1
 GENERATE_CLEARS_DATA = True
 
-INCLUDE_PLAIN_N__TXT = True
-INCLUDE_ENCRYPT_STDOUT_N__TXT = True
-INCLUDE_CIPHER_N__TXT = True
-INCLUDE_BETA_LITERALS_SETS_N__TXT = True
-INCLUDE_CLAUSES_N__TXT = True
+INCLUDE_BETA_LITERALS_SETS_N__TXT = False
+INCLUDE_CIPHERTEXT_N__TXT = True  # human-readable printout of ciphertext hdf5 file
+INCLUDE_CLAUSES_N__TXT = False
+INCLUDE_ENCRYPT_STDOUT_N__TXT = False
+INCLUDE_PRIVATE_KEY_N__TXT = False
 
 ### GENERATION OPTIMIZATIONS
 
@@ -17,14 +17,13 @@ LEAVE_CLAUSES_UNSORTED = False
 
 ### ENCRYPTION PARAMETERS
 
-N = 100 # 4 # number of variables
-M = 426 # 7 # number of clauses; M > N
+N = 100  # 4 # number of variables
+M = 426  # 7 # number of clauses; M > N
 K = 3  # number of variables per clause
 ALPHA = 3  # 4 or 5 are the upper bound for reasonable solve times right now
 BETA = 10
 
 ### DECRYPTION PARAMETERS
-
 
 
 ### CODEBREAKING PARAMETERS
@@ -52,8 +51,8 @@ CONDITION_B = False
 CONDITION_C = False
 
 
-CIPHER_SORTING_ORDER = [
-        len, # shortness of monomial
-        # lambda term: list(term) # literals of monomial, ascending
+CIPHERTEXT_SORTING_ORDER = [
+    len,  # shortness of monomial
+    # lambda term: list(term) # literals of monomial, ascending
 ]
-REVERSE_CIPHER_SORTING = False
+REVERSE_CIPHERTEXT_SORTING = False

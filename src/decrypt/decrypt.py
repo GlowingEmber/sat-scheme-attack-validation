@@ -7,7 +7,7 @@ def g(n):
 
     with open(f"data/cipher_{n}_dir/priv_{n}.txt", "r") as file:
         priv = file.read()
-        with h5py.File(f"data/cipher_{n}_dir/cipher_{n}.hdf5", "r") as file:
+        with h5py.File(f"data/cipher_{n}_dir/ciphertext_{n}.hdf5", "r") as file:
             if "expression" in file:
 
                 def assign(x):

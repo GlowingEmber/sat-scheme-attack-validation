@@ -1,17 +1,33 @@
 import math
 
-###
-### Encryption
-###
+### GENERATION PARAMETERS
 
-# N < M
-N = 100 # 4 # NUMBER OF VARIABLES
-M = 426 # 7 # NUMBER OF CLAUSES
-K = 3  # NUMBER OF VARIABLES PER CLAUSE
+PLAINTEXT = 1
+GENERATE_CLEARS_DATA = True
 
-# 2 <= BETA << (much less than) ALPHA
-ALPHA = 3  # ~4 or 5 are the upper bounds for reasonable solve time right now
+INCLUDE_BETA_LITERALS_SETS__TXT = False
+INCLUDE_CIPHER_N__TXT = True
+INCLUDE_ENCRYPT_STDOUT_N__TXT = False
+INCLUDE_PLAIN_N__TXT = False
+INCLUDE_PRIV_N__TXT = False
+
+### ENCRYPTION PARAMETERS
+
+N = 100 # 4 # number of variables
+M = 426 # 7 # number of clauses; M > N
+K = 3  # number of variables per clause
+ALPHA = 3  # 4 or 5 are the upper bound for reasonable solve times right now
 BETA = 10
+
+### DECRYPTION PARAMETERS
+
+
+
+### CODEBREAKING PARAMETERS
+
+TERM_LENGTH_CUTOFF = math.floor(1.9 * ALPHA)
+
+### NOT YET IMPLEMENTED
 
 # (a)
 # To counter attacks discussed in Section 3.1.2, it is prefer-
@@ -37,9 +53,3 @@ CIPHER_SORTING_ORDER = [
         # lambda term: list(term) # literals of monomial, ascending
 ]
 REVERSE_CIPHER_SORTING = False
-
-###
-### Codebreaking
-###
-
-TERM_LENGTH_CUTOFF = math.floor(1.9 * ALPHA)

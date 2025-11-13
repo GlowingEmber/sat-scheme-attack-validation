@@ -1,12 +1,12 @@
-cleardata() {
+clearData() {
     if [ ! -z "$( ls -A $DATA_DIRECTORY )" ]; then
         rm -rf $DATA_DIRECTORY/*
     fi
 }
 
-alias generate="./generate.zsh"
+alias generate="python3 generate.py"
 alias encrypt="./generate.zsh"
-alias cleardata=cleardata
+alias cleardata=clearData
 alias codebreak="python3 -m src.codebreak.codebreak"
 alias decrypt="python3 -m src.decrypt.decrypt"
 

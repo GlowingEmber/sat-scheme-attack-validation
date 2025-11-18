@@ -5,7 +5,6 @@ import math
 PLAINTEXT = "r" # 0, 1, or "r" (random)
 GENERATE_CLEARS_DATA = True
 
-INCLUDE_BETA_LITERALS_SETS_N__TXT = True
 INCLUDE_CIPHERTEXT_N__TXT = True  # human-readable printout of ciphertext hdf5 file
 INCLUDE_ENCRYPT_STDOUT_N__TXT = False
 

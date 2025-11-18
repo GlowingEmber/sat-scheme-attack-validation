@@ -41,6 +41,9 @@ def cnf_to_neg_anf(term):
 
 def encrypt():
     J_MAP = [secure.sample(range(1, M), ALPHA) for _ in range(BETA)]
+    ### NOTE: this currently samples WITHOUT replacement for each row, 
+    ### but with replacement between rows.
+    ### Is this the intended behavior? 
     CLAUSES = key.generate_clause_list()
 
     cipher = np.empty(0, dtype=object)
@@ -111,10 +114,9 @@ def encrypt():
     f.close()
 
     ### beta_literals_sets_n__txt
-    if INCLUDE_BETA_LITERALS_SETS_N__TXT:
-        f = open(f"data/cipher_{args.n}_dir/beta_literals_sets_{args.n}.txt", "w")
-        f.write(str(f"{beta_literals_sets}\n"))
-        f.close()
+    f = open(f"data/cipher_{args.n}_dir/beta_literals_sets_{args.n}.txt", "w")
+    f.write(str(f"{beta_literals_sets}\n"))
+    f.close()
 
     ### clauses_n__txt
     f = open(f"data/cipher_{args.n}_dir/clauses_{args.n}.txt", "w")

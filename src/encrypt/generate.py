@@ -5,6 +5,7 @@ import os
 import argparse
 import random
 
+
 my_env = os.environ.copy()
 
 
@@ -22,7 +23,10 @@ def run_zsh(cmd, capture=False):
 def generate(n):
     os.makedirs(my_env["DATA_DIRECTORY"], exist_ok=True)
     if GENERATE_CLEARS_DATA:
-        if os.path.isdir(my_env["DATA_DIRECTORY"]) and len(os.listdir(my_env["DATA_DIRECTORY"])) > 0:
+        if (
+            os.path.isdir(my_env["DATA_DIRECTORY"])
+            and len(os.listdir(my_env["DATA_DIRECTORY"])) > 0
+        ):
             run_zsh("rm -rf $DATA_DIRECTORY/*")
             print(f"data directory cleared")
 
@@ -76,35 +80,58 @@ def generate(n):
         if AUTOMATICALLY_TEST_CODEBREAK:
             cmd = f"python3 -m src.decrypt.decrypt {next_n}"
             decryption = int(run_zsh(cmd, capture=True).stdout[:-1])
-            # print(decryption)
 
             cmd = f"python3 -m src.codebreak.codebreak {next_n}"
-            codebreak = int(run_zsh(cmd, capture=True).stdout[:-1])
-            # print(codebreak)
+            code = codebreak = int(run_zsh(cmd, capture=True).stdout[:-1])
 
-            # decryption == codebreak: "success"
-            # decryption != codebreak: "failure"
-            # codebreak == -1: "problem running algorithm (error 1)"
-            # codebreak == -2: "problem running algorithm (error 2)"
-            results = "unknown"
+            if codebreak >= 0:
+                code = int(codebreak == decryption)
+            codebreak_results[code] += 1
 
-            if decryption in [0,1] and decryption == codebreak:
-                results = "success"
-            if decryption in [0,1] and decryption != codebreak:
-                results = "failure"
-            if codebreak in [-1]:
-                results = "problem running algorithm (error-1)"
-            if codebreak in [-2]:
-                results = "problem running algorithm (error-2)"
+            codes = {
+                1: ("success", "green"),
+                0: ("failure", "red"),
+                -1: ("error 1", "yellow"),
+                -2: ("error 2", "yellow"),
+                -3: ("error 3", "yellow"),
+                -4: ("error 4", "yellow"),
+                -100: ("unknown error", "yellow"),
+            }
+            result_str = codes.get(code, codes.get(-100))
 
-            codebreak_results[results] += 1
-            
-            print (f"y = {decryption} \u2227 attack(pub,c) = {codebreak}       =>      {results}")
-            for r in codebreak_results.keys():
-                key = r
-                value = codebreak_results[r]
-                print(f"{round(100*value/len(ciphers), 2)}% ({value}/{len(ciphers)}): {key}")
-            print("\n\n")
+            try:
+                from termcolor import colored
+                result_str = colored(result_str[0], result_str[1])
+            except:
+                result_str = result_str[0]
+
+            w = max(codebreak_results, key=lambda c: len(codes[c]))
+
+            print(f"{result_str} (y={decryption} \u2227 attack(pub,c)={codebreak})\n")
+            print(f"{len(ciphers)} cipher{'' if len(ciphers) == 1 else 's'} total")
+
+            for n in codebreak_results.keys():
+
+                current_count = codebreak_results[n]
+                total_count = len(ciphers)
+
+                result_string = codes.get(n, codes.get(-100))
+
+                try:
+                    from termcolor import colored
+                    result_string = colored(result_string[0], result_string[1])
+                except:
+                    result_string = result_string[0]
+                
+                result_str = result_string
+                format_str = "{:>{w}}"
+                percent_str = f"{round(100 * current_count / len(ciphers), 2)}"
+                fraction_str = f"{current_count}/{len(ciphers)}"
+
+                s = f"{result_str} {format_str.format(percent_str, w=str(w+3))}% ({fraction_str})"
+                print(s)
+
+            print("=" * 30)
 
     if n > 1:
         print(f"{n} ciphers ({", ".join(ciphers)}) created in {round(t,2)}s")

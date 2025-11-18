@@ -4,11 +4,10 @@ import sys
 import ast
 from collections import defaultdict, Counter
 
-from itertools import chain as flatten, combinations as subset, product as cartesian
+from itertools import chain as flatten, product as cartesian
 import galois
 import h5py
 import numpy as np
-
 
 from src.encrypt.encrypt import cnf_to_neg_anf, distribute
 from parameters import *
@@ -16,7 +15,6 @@ from parameters import *
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-
 
 MAX_DIFF_PCT = 0.5
 
@@ -49,7 +47,7 @@ def recover_beta_literals(ciphertext_n__hdf5_file):
 
         groups = []
 
-        while len(groups) < BETA:
+        while len(groups) < BETA and len(ciphertext) > 0:
 
             largest = max(ciphertext, key=len)
             group = set(largest)
@@ -57,7 +55,15 @@ def recover_beta_literals(ciphertext_n__hdf5_file):
 
             while True:
 
-                closeness = map(lambda x: (x, len(group.difference(x))), ciphertext)
+                if len(ciphertext) == 0:
+                    groups.append(group)
+                    group = set()
+                    break
+
+                closeness = np.fromiter(
+                    map(lambda x: (x, len(group.difference(x))), ciphertext),
+                    dtype=object,
+                )
 
                 closest = min(closeness, key=lambda x: x[1])
 
@@ -77,16 +83,22 @@ def recover_beta_literals(ciphertext_n__hdf5_file):
         return sorted(beta_literals_sets)
 
 
-def recover_plaintext(ciphertext_n__hdf5_file, clauses_n__txt_file, formatted_printout):
+def recover_plaintext(ciphertext_n__hdf5_file, clauses_n__txt_file, beta_literals_sets_n__txt_file, formatted_printout):
 
-    beta_literals_sets = recover_beta_literals(ciphertext_n__hdf5_file)
+    real_beta_literals_sets = ast.literal_eval(beta_literals_sets_n__txt_file.read())
+    recovered_beta_literals_sets = recover_beta_literals(ciphertext_n__hdf5_file)
+    if real_beta_literals_sets != recovered_beta_literals_sets:
+        return -1
+
+
+
     clauses = clauses_n__txt_file.read()
     all_clauses = ast.literal_eval(clauses)
     a_terms = defaultdict(list)
 
     coefficient_count = 0
 
-    for beta_literals_set in beta_literals_sets:
+    for beta_literals_set in recovered_beta_literals_sets:
 
         possible_clauses = np.fromiter(
             filter(
@@ -98,7 +110,7 @@ def recover_plaintext(ciphertext_n__hdf5_file, clauses_n__txt_file, formatted_pr
 
         if len(possible_clauses) < ALPHA:
             # raise ValueError(f"<{ALPHA} clauses found")
-            return -1
+            return -2
 
         v__cnf_to_neg_anf = np.vectorize(cnf_to_neg_anf)
         C = v__cnf_to_neg_anf(possible_clauses)
@@ -131,7 +143,6 @@ def recover_plaintext(ciphertext_n__hdf5_file, clauses_n__txt_file, formatted_pr
 
             for term in unformatted_C_iR_i:
 
-
                 coefficient = term[0][0]
                 literals = tuple(sorted([int(x) for x in set(term[0][1] + term[1])]))
                 full_term = (coefficient, literals)
@@ -158,8 +169,7 @@ def recover_plaintext(ciphertext_n__hdf5_file, clauses_n__txt_file, formatted_pr
 
     if len(simplified_cipher - set(a_terms.keys())) > 0:
         # print(simplified_cipher - set(a_terms.keys()), file=sys.stderr)
-        # raise ValueError("Uh oh, something went wrong with the codebreaking")
-        return -2
+        return -3
 
     rows = len(a_terms.keys())
     cols = coefficient_count
@@ -171,7 +181,7 @@ def recover_plaintext(ciphertext_n__hdf5_file, clauses_n__txt_file, formatted_pr
         a[i] = clause_vector(a_terms[term], cols)
         b[i] = int(term in simplified_cipher)
         if sum(a[i]) == 0 and b[i] == 1:
-            return -3
+            return -4
             # raise ValueError
 
     GF = galois.GF(2)
@@ -196,13 +206,15 @@ def codebreak(n, formatted_printout=False):
     cipher_n_dir = f"{os.environ.get("DATA_DIRECTORY")}/cipher_{n}_dir"
     ciphertext_n__hdf5 = f"{cipher_n_dir}/ciphertext_{n}.hdf5"
     clauses_n__txt = f"{cipher_n_dir}/clauses_{n}.txt"
+    beta_literals_sets_n__txt = f"{cipher_n_dir}/beta_literals_sets_{n}.txt"
 
     with h5py.File(ciphertext_n__hdf5, "r") as ciphertext_n__hdf5_file:
         with open(clauses_n__txt, "r") as clauses_n__txt_file:
-            y = recover_plaintext(
-                ciphertext_n__hdf5_file, clauses_n__txt_file, formatted_printout
-            )
-            return y
+            with open(beta_literals_sets_n__txt, "r") as beta_literals_sets_n__txt_file:
+                y = recover_plaintext(
+                    ciphertext_n__hdf5_file, clauses_n__txt_file, beta_literals_sets_n__txt_file, formatted_printout
+                )
+                return y
 
 
 ###

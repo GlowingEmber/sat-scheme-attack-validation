@@ -16,4 +16,4 @@ CONDITION_C = False # Each clause of public key appears in some tuple. [Discusse
 
 ### attack
 import math
-TERM_LENGTH_CUTOFF = math.floor(1.9 * ALPHA)
+TERM_LENGTH_CUTOFF = math.floor(1.6 * ALPHA) # 1.9? 1.6?

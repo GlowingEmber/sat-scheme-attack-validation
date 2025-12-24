@@ -96,7 +96,7 @@ def _encrypt(args):
     f.close()
 
     with h5py.File(CIPHERTEXT_FILEPATH, "w") as f:
-        vlen_dtype = h5py.vlen_dtype(np.dtype("float64"))
+        vlen_dtype = h5py.vlen_dtype(np.dtype("int64"))
         dset = f.create_dataset(
             name="ciphertext", shape=(len(ciphertext),), dtype=vlen_dtype
         )

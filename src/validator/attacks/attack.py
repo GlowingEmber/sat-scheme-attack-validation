@@ -9,61 +9,11 @@ import h5py
 import numpy as np
 from ..parameters import *
 from ..helpers import *
+from .beta_literal_recovery import _blr__simple, _blr__k_means
 
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-
-def _recover_beta_literals(ciphertext_n__hdf5_file):
-    if "ciphertext" in ciphertext_n__hdf5_file:
-
-        ciphertext = ciphertext_n__hdf5_file["ciphertext"]
-        ciphertext = np.array(ciphertext[:])
-        ciphertext = map(tuple, ciphertext)
-
-        lengths = map(len, ciphertext)
-
-        ciphertext = zip(ciphertext, lengths)
-        ciphertext, _ = zip(*filter(lambda x: x[1] > TERM_LENGTH_CUTOFF, ciphertext))
-        ciphertext = set(ciphertext)
-
-        groups = []
-
-        while len(groups) < BETA and len(ciphertext) > 0:
-
-            largest = max(ciphertext, key=len)
-            group = set(largest)
-            ciphertext.remove(largest)
-
-            while True:
-
-                if len(ciphertext) == 0:
-                    groups.append(group)
-                    group = set()
-                    break
-
-                closeness = np.fromiter(
-                    map(lambda x: (x, len(group.difference(x))), ciphertext),
-                    dtype=object,
-                )
-
-                closest = min(closeness, key=lambda x: x[1])
-
-                MAX_DIFF_PCT = 0.5
-                max_diff = math.floor(MAX_DIFF_PCT * len(group))
-
-                if closest[1] <= max_diff:
-                    group = group.union(closest[0])
-                    ciphertext.remove(closest[0])
-                else:
-                    groups.append(group)
-                    group = set()
-                    break
-
-        beta_literals_sets = []
-        for s in groups:
-            beta_literals_sets.append(sorted([int(l) for l in s]))
-        return sorted(beta_literals_sets)
 
 
 def _recover_plaintext(
@@ -73,9 +23,9 @@ def _recover_plaintext(
 ):
 
     real_beta_literals_sets = ast.literal_eval(beta_literals_sets_n__txt_file.read())
-    recovered_beta_literals_sets = _recover_beta_literals(ciphertext_n__hdf5_file)
-    if real_beta_literals_sets != recovered_beta_literals_sets:
-        return -1
+    recovered_beta_literals_sets = _blr__k_means(ciphertext_n__hdf5_file)
+    # if real_beta_literals_sets != recovered_beta_literals_sets:
+    #     return -1
 
     clauses = clauses_n__txt_file.read()
     all_clauses = ast.literal_eval(clauses)
@@ -92,6 +42,7 @@ def _recover_plaintext(
             ),
             dtype=list,
         )
+        print(possible_clauses)
 
         if len(possible_clauses) < ALPHA:
             return -2

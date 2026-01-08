@@ -8,7 +8,7 @@ from ..parameters import *
 from ..helpers import *
 import matplotlib.pyplot as plt
 
-def _blr__naive(ciphertext_n__hdf5_file):
+def blr__naive(ciphertext_n__hdf5_file):
     if "ciphertext" in ciphertext_n__hdf5_file:
 
         ciphertext = ciphertext_n__hdf5_file["ciphertext"]
@@ -60,7 +60,7 @@ def _blr__naive(ciphertext_n__hdf5_file):
         return sorted(beta_literals_sets)
     
 
-def _blr__clusters(ciphertext_n__hdf5_file):
+def blr__clusters(ciphertext_n__hdf5_file):
 
     if "ciphertext" in ciphertext_n__hdf5_file:
 

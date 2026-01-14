@@ -19,14 +19,14 @@ def _variables_sets(ciphertext_file, clauses_file):
     if "ciphertext" in ciphertext_file:
 
         #########
-        # 1
+        ######### STEP 1
         #########
 
-        ciphertext = [set(x) for x in ciphertext_file["ciphertext"][:][:50]]
+        ciphertext = [tuple(set(x)) for x in ciphertext_file["ciphertext"][:]]
         s = [set().union(*subset) for subset in combinations(ciphertext, 2)]
 
         #########
-        # 2
+        ######### STEP 2
         #########
 
         def variable_contained(monomial, variable):
@@ -59,23 +59,68 @@ def _variables_sets(ciphertext_file, clauses_file):
 
         clauses = np.array(ast.literal_eval(clauses_file.read()))
         clauses_variables_only = np.fromiter(
-            map(lambda c: c.T[0], clauses), dtype=object
+            map(lambda c: (c.T[0], c), clauses), dtype=object
         )
 
+        #########
+        ######### STEP 3
+        #########
+
+        def monomial_contained(monomial, subset):
+            return set(monomial[0]).issubset(set(subset))
+
         t1 = [
-            filter(lambda m: set(m).issubset(set(subset)), clauses_variables_only)
-            for subset in s2
+            list(filter(partial(monomial_contained, subset=s), clauses_variables_only))
+            for s in s2
         ]
 
-        for c in t1:
-            negative_anf = list(cnf_to_neg_anf(list(c)))
-            for monomial in negative_anf:
-                pass
+        # optimization: record vars:clauses in a dictionary for redundant cases
+
+        #########
+        ######### STEP 4
+        #########
+
+        t2 = []
+
+        for collection in t1:
+
+            abort = False
+
+            for clause in collection:
+
+                if abort:
+                    break
+
+                negative_anf = list(cnf_to_neg_anf(list(clause[1])))
+
+                for monomial in negative_anf:
+
+                    m_set = set(monomial)
+                    excluding_set = set(clause[0]) - m_set
+
+                    m1 = (monomial,)
+                    R = list(distribute(excluding_set))
+
+                    count = sum(
+                        [
+                            (tuple(sorted(m1m2)) in ciphertext)
+                            for m1m2 in product_simplify(m1, R)
+                        ]
+                    )
+
+                    if count / len(R) < 1/4:
+                        abort = True
+                        break
+
+            t2.append(collection)
+        return t2
 
 
-def _recover_plaintext(ciphertext_file, clauses_file):
+def _linearization(ciphertext_file, clauses_file):
 
     clauses = _variables_sets(ciphertext_file, clauses_file)
+    for x in clauses:
+        print(x)
 
     # rows = len(a_terms.keys())
     # cols = coefficient_count
@@ -110,7 +155,7 @@ def attack(args):
 
     with h5py.File(CIPHERTEXT_FILEPATH, "r") as CIPHERTEXT_FILE:
         with open(CLAUSES_FILEPATH, "r") as CLAUSES_FILE:
-            y = _recover_plaintext(CIPHERTEXT_FILE, CLAUSES_FILE)
+            y = _linearization(CIPHERTEXT_FILE, CLAUSES_FILE)
             return y
 
 

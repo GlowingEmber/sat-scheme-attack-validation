@@ -62,7 +62,7 @@ def _evaluate(args):
             decryption = int(decryption_results.stdout[:-1])
 
 
-            cmd = f"python3 -m validator.attacks.attack {i}"
+            cmd = f"python3 -m validator.attacks.attack_2 {i}"
             attack_results = run_zsh(cmd, capture=True)
             try:
                 attack = int(attack_results.stdout[:-1])

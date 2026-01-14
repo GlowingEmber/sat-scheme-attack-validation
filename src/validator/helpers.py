@@ -4,6 +4,7 @@ from itertools import chain as flatten, combinations as subset, product as carte
 
 CONSTANT_MONOMIAL = tuple()  # empty tuple
 
+
 class Coefficient:
     def __init__(self, v):
         self.value = v
@@ -16,6 +17,7 @@ class Coefficient:
             raise NotImplementedError
         return self.value == other.value
 
+
 def run_zsh(cmd, capture=False):
     return subprocess.run(
         cmd,
@@ -25,18 +27,23 @@ def run_zsh(cmd, capture=False):
         capture_output=capture,
     )
 
+
 def distribute(iterable):
     return flatten.from_iterable(subset(iterable, r) for r in range(len(iterable) + 1))
 
-def product_simplify(clause, random):
-    clause = np.fromiter(clause, dtype=tuple)
-    random = np.fromiter(random, dtype=tuple)
-    x_array, y_array = np.meshgrid(clause, random)
+
+def product_simplify(a:list, b:list):
+    a = np.fromiter(a, dtype=tuple)
+    b = np.fromiter(b, dtype=tuple)
+    x_array, y_array = np.meshgrid(a, b)
     product = np.fromiter(zip(x_array.ravel(), y_array.ravel()), dtype=tuple)
     product = [set(flatten(*t)) for t in product]
     return product
 
-def cnf_to_neg_anf(term):
+
+def cnf_to_neg_anf(term: list):
+    if not isinstance(term, list):
+        raise ValueError("`term` argument for cnf_to_neg_anf() must be a list")
     term = term + [(1,)]
     term = cartesian(*term)
     term = filter(lambda t: 0 not in t, term)

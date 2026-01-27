@@ -17,48 +17,30 @@ secure = secrets.SystemRandom()
 
 
 def generate_j_map():
-
-    # def _generate_sigma():
-        # by default it's simply a random string ajdkljaskletnksadjflais
-        # if BC then it's a random string too asdjfklasjektnaskejtlk;aj
-        # if A then it's a string following special generation to increase neighboring clause odds
-
-        # 
-        
-    # by default simply pick 
-            
-        
-
-    # j_map = [secure.sample(range(M), BETA) for _ in range(ALPHA)]
-
+    """Generate J : {1, . . . , α} × {1, . . . , β} → {1, . . . , m}."""
     if CONDITIONS_B_C:
         if ALPHA != M:
-            raise ValueError("α must equal m with conditions B/C")
+            raise ValueError("ALPHA must equal M for conditions B/C")
         
-        s = list(range(M))
-        if CONDITION_A:
-            pass
-        else:
-            secure.shuffle(s)
+        indices = list(range(M))
+        secure.shuffle(indices)
         
-        j_map = [
-            [s[(i + a - 1) % M] for a in range(1, BETA + 1)]
+        return [
+            [indices[(i + a - 1) % M] for a in range(1, BETA + 1)]
             for i in range(1, ALPHA + 1)
         ]
-
-    return j_map
+    return []
 
 
 def _encrypt(args):
-    CLAUSES = key.generate_clause_list()
+    PUBLIC_KEY = key.generate_clause_list()
     J_MAP = generate_j_map()
 
     ciphertext = np.empty(0, dtype=object)
     beta_literals_sets = []
 
     for a in range(ALPHA):
-
-        beta_clauses_list = [CLAUSES[r] for r in J_MAP[a]]
+        beta_clauses_list = [PUBLIC_KEY[r] for r in J_MAP[a]]
         beta_literals_list = [l[0] for l in flatten(*beta_clauses_list)]
         beta_counts_set = set(Counter(beta_literals_list).items())
         beta_literals_set = sorted(set(beta_literals_list))
@@ -66,8 +48,8 @@ def _encrypt(args):
 
         for i in range(BETA):
 
-            clause = CLAUSES[J_MAP[a][i]]
-            clause_literals_set = set([l[0] for l in clause])
+            clause = PUBLIC_KEY[J_MAP[a][i]]
+            clause_literals_set = set(l[0] for l in clause)
             clause = cnf_to_neg_anf(clause)
             beta_literals_subset = filter(
                 lambda t: t[0] not in clause_literals_set or t[1] >= 2, beta_counts_set
@@ -102,29 +84,27 @@ def _encrypt(args):
     elif y_term == 1 and constant_term == 1:
         ciphertext.remove(tuple())
 
-    if LEAVE_CLAUSES_UNSORTED:
+    if LEAVE_MONOMIALS_UNSORTED:
         ciphertext = sorted(
             ciphertext,
             key=lambda term: np.array([p(term) for p in [len]]),
             reverse=True,
         )
 
+
+    PUBLIC_KEY_FILEPATH = f"tests/c_{args.i}/public_key_{args.i}.txt"
     PRIVATE_KEY_FILEPATH = f"tests/c_{args.i}/private_key_{args.i}.txt"
     BETA_LITERALS_SETS_FILEPATH = f"tests/c_{args.i}/beta_literals_sets_{args.i}.txt"
-    CLAUSES_FILEPATH = f"tests/c_{args.i}/clauses_{args.i}.txt"
     CIPHERTEXT_FILEPATH = f"tests/c_{args.i}/ciphertext_{args.i}.hdf5"
 
-    f = open(PRIVATE_KEY_FILEPATH, "w")
-    f.write(str(f"{key.PRIVATE_KEY_STRING}\n"))
-    f.close()
+    with open(PRIVATE_KEY_FILEPATH, "w") as f:
+        f.write(str(f"{key.PRIVATE_KEY_STRING}\n"))
 
-    f = open(BETA_LITERALS_SETS_FILEPATH, "w")
-    f.write(str(f"{beta_literals_sets}\n"))
-    f.close()
+    with open(BETA_LITERALS_SETS_FILEPATH, "w") as f:
+        f.write(str(f"{beta_literals_sets}\n"))
 
-    f = open(CLAUSES_FILEPATH, "w")
-    f.write(str(CLAUSES))
-    f.close()
+    with open(PUBLIC_KEY_FILEPATH, "w") as f:
+        f.write(str(PUBLIC_KEY))
 
     with h5py.File(CIPHERTEXT_FILEPATH, "w") as f:
         vlen_dtype = h5py.vlen_dtype(np.dtype("int64"))

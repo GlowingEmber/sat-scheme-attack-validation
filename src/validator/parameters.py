@@ -1,15 +1,15 @@
 ### Testing parameters
-EVALUATE_CLEARS_DATA = False  # `evaluate n` clears all ciphertexts in ~/tests/
+EVALUATE_CLEARS_DATA = True  # `evaluate n` clears all ciphertexts in ~/tests/
 INCLUDE_READABLE_CIPHERTEXT = True  # Creates a readable ciphertext file.
-LEAVE_CLAUSES_UNSORTED = False  # Optimization if clause order is unimportant.
+LEAVE_MONOMIALS_UNSORTED = False  # Optimization if clause order is unimportant.
 
 ### Encryption parameters
 PLAINTEXT = "r"  # Plaintext. [0, 1, or "r" (random)]
-N = 20  # Number of variables total.
-M = 10  # Number of clauses total. [M > N]
+N = 100  # Number of variables total.
+M = 5  # Number of clauses total. [M > N]
 K = 3  # Number of variables per clause.
-BETA = 3  # Number of clauses per row.
-ALPHA = 10  # Number of rows.
+BETA = 5  # Number of clauses per row.
+ALPHA = 5  # Number of rows.
 
 ### Encryption invariants [Section 2.2]
 CONDITIONS_B_C = True

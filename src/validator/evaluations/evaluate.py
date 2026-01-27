@@ -57,12 +57,12 @@ def _evaluate(args):
         if args.generate_only:
             s = f"ciphertext {i} created: y={plaintext}"
         else:
-            cmd = f"python3 -m validator.primitives.decrypt {i}"
+            cmd = f"decrypt {i}"
             decryption_results = run_zsh(cmd, capture=True)
             decryption = int(decryption_results.stdout[:-1])
 
 
-            cmd = f"python3 -m validator.attacks.attack_2 {i}"
+            cmd = f"attack {i}"
             attack_results = run_zsh(cmd, capture=True)
             try:
                 attack = int(attack_results.stdout[:-1])

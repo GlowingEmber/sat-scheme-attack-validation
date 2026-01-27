@@ -27,6 +27,8 @@ def _variables_sets(ciphertext_file, clauses_file):
         ciphertext = [tuple(set(x)) for x in ciphertext_file["ciphertext"][:]]
         s = [set().union(*subset) for subset in combinations(ciphertext, 2)]
 
+        print(s)
+
         #########
         ######### STEP 2
         #########

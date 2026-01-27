@@ -32,7 +32,7 @@ def distribute(iterable):
     return flatten.from_iterable(subset(iterable, r) for r in range(len(iterable) + 1))
 
 
-def product_simplify(a:list, b:list):
+def product_simplify(a: list, b: list):
     a = np.fromiter(a, dtype=tuple)
     b = np.fromiter(b, dtype=tuple)
     x_array, y_array = np.meshgrid(a, b)
@@ -49,4 +49,4 @@ def cnf_to_neg_anf(term: list):
     term = filter(lambda t: 0 not in t, term)
     term = map(lambda t: tuple(filter(lambda t: t != 1, t)), term)
     term = map(lambda t: tuple(set(t)), term)
-    return term
+    return list(term)

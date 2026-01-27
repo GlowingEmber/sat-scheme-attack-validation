@@ -22,4 +22,4 @@ dependencies = [
 [project.scripts]
 evaluate = "validator.evaluations.evaluate:main"
 decrypt = "validator.primitives.decrypt:main"
-attack = "validator.attacks.attack_2:main"
+attack = "validator.attacks.attack:main"
